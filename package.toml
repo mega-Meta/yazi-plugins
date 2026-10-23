@@ -1,0 +1,116 @@
+[[plugin.deps]]
+use = "gesellkammer/audio-preview"
+rev = "7a7e86c"
+hash = "c14ed0c202932a585631c01639929b0b"
+
+[[plugin.deps]]
+use = "AminurAlam/yazi-plugins:preview-audio"
+rev = "28eea47"
+hash = "475141b0337cf9934b0bc81202e2537c"
+
+[[plugin.deps]]
+use = "AminurAlam/yazi-plugins:preview-epub"
+rev = "28eea47"
+hash = "475ca512768cd51412461ee58b17188e"
+
+[[plugin.deps]]
+use = "AminurAlam/yazi-plugins:preview-git"
+rev = "28eea47"
+hash = "ba369f2f02be9e932cf7882c113d6844"
+
+[[plugin.deps]]
+use = "AminurAlam/yazi-plugins:spot"
+rev = "28eea47"
+hash = "2e64679e3a122716a386954733cd3c28"
+
+[[plugin.deps]]
+use = "AminurAlam/yazi-plugins:spot-audio"
+rev = "28eea47"
+hash = "4eb64572721410a8b05629de4c93dd38"
+
+[[plugin.deps]]
+use = "ciarandg/cd-git-root"
+rev = "a0e0f4b"
+hash = "b84a85f3b513bd9c0a0ab93cc7c8e4c3"
+
+[[plugin.deps]]
+use = "yazi-rs/plugins:git"
+rev = "603fa36"
+hash = "347cc6b190eb0c2fd60513cc7ae37412"
+
+[[plugin.deps]]
+use = "yazi-rs/plugins:chmod"
+rev = "603fa36"
+hash = "87472b05a8c420100f6a2b9cde1e7746"
+
+[[plugin.deps]]
+use = "yazi-rs/plugins:smart-enter"
+rev = "603fa36"
+hash = "187cc58ba7ac3befd49c342129e6f1b6"
+
+[[plugin.deps]]
+use = "yazi-rs/plugins:mount"
+rev = "603fa36"
+hash = "b95f898e6dc60b52edbc415952e14395"
+
+[[plugin.deps]]
+use = "yazi-rs/plugins:zoom"
+rev = "603fa36"
+hash = "558bbb58e3dd36d488280a8f10e7b904"
+
+[[plugin.deps]]
+use = "Sonico98/exifaudio"
+rev = "4506f9d"
+hash = "4761fffb60a12d37096c34a356380cdf"
+
+[[plugin.deps]]
+use = "ndtoan96/ouch"
+rev = "596b666"
+hash = "c2f4f4aca257dcceafa9e3b828dbf1c9"
+
+[[plugin.deps]]
+use = "GianniBYoung/rsync"
+rev = "b5c657a"
+hash = "72828957273094ed0ef52792e3290900"
+
+[[plugin.deps]]
+use = "wylie102/duckdb"
+rev = "3f8c863"
+hash = "87b9233a74325e95011670ed20bbd0d4"
+
+[[plugin.deps]]
+use = "KKV9/command"
+rev = "523e6a5"
+hash = "a7e5577f7bae80fa064e416c09ac62a4"
+
+[[plugin.deps]]
+use = "nsavvide/duck-radar"
+rev = "92d21c1"
+hash = "b039542e811968b2c787548aed719ce6"
+
+[[plugin.deps]]
+use = "mega-Meta/copyto"
+rev = "f57cd72"
+hash = "cf026e8e3fefadae746ac89edf46e3c8"
+
+[[plugin.deps]]
+use = "goon/omni-trash"
+rev = "3c2a992"
+hash = "6e5bf967707c8c9b6495cf5863ff497f"
+
+[[flavor.deps]]
+use = "mingo99/tokyonight"
+rev = "d812af6"
+hash = "9932041c36eea9a23daf0a880f104067"
+
+[[flavor.deps]]
+use = "yazi-rs/flavors:catppuccin-mocha"
+rev = "1183892"
+hash = "ce320f877fe709b189433941aba747c4"
+
+[[plugin.deps]]
+use = "mega-Mata/maxview"
+
+[[plugin.deps]]
+use = "mega-Mata/mpv-play"
+

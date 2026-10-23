@@ -1,0 +1,52 @@
+# Theme: Tokyo Night inspired theme - works well with most terminal color schemes
+[flavor]
+dark = "catppuccin-mocha"
+light = "catppuccin-mocha"
+
+[mode]
+normal_main = { fg = "black", bg = "blue", bold = true }
+normal_alt = { fg = "blue", bg = "reset", bold = true }
+select_main = { fg = "black", bg = "green", bold = true }
+select_alt = { fg = "green", bg = "reset", bold = true }
+unset_main = { fg = "black", bg = "red", bold = true }
+unset_alt = { fg = "red", bg = "reset", bold = true }
+
+[status]
+sep_left = { open = "", close = "" }
+sep_right = { open = "", close = "" }
+overall = { fg = "reset", bg = "reset" }
+
+[git]
+unstaged = { fg = "blue" }
+deleted  = { fg = "red", bold = true }
+unknown_sign  = " "
+unstaged_sign = "M"
+deleted_sign  = "D"
+clean_sign    = "✔"
+
+[filetype]
+rules = [
+  # Media
+  { mime = "image/*", fg = "magenta" },
+  { mime = "video/*", fg = "yellow" },
+  { mime = "audio/*", fg = "yellow" },
+
+  # Archives
+  { mime = "application/zip", fg = "red" },
+  { mime = "application/gzip", fg = "red" },
+  { mime = "application/x-tar", fg = "red" },
+  { mime = "application/x-bzip2", fg = "red" },
+  { mime = "application/x-7z-compressed", fg = "red" },
+  { mime = "application/x-rar", fg = "red" },
+  { mime = "application/x-xz", fg = "red" },
+
+  # Documents
+  { mime = "application/pdf", fg = "cyan" },
+  { mime = "application/*doc*", fg = "green" },
+  { mime = "application/*sheet*", fg = "green" },
+  { mime = "application/*presentation*", fg = "green" },
+
+  # Fallback
+  { mime = "*", fg = "reset" },
+  { mime = "*/", fg = "blue", bold = true },
+]
