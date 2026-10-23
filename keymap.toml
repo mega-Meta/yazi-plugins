@@ -1,0 +1,73 @@
+#[manager]
+[mgr]
+prepend_keymap = [
+	{ on = [ "g", "d", "c" ], run = "cd ~/Documents", desc = "Goto Documents"},
+	{ on = [ "g", "d", "w" ], run = "cd ~/Downloads", desc = "Goto downloads" },
+	{ on = [ "g", "d", "s" ], run = "cd ~/Desktop", desc = "Goto desktop" },
+	{ on = [ "g", "m" ], run = "cd ~/Music", desc = "Goto Music"},
+	{ on = [ "g", "t" ], run = "cd /tmp", desc = "Goto tmp dir" },
+	{ on = [ "g", "w" ], run = "cd ~/work", desc = "Goto work dir" },
+	{ on = [ "g", "c" ], run = "cd ~/.config", desc = "Goto .config dir" },
+	{ on = [ "g", "y" ], run = "cd ~/.config/yazi", desc = "Goto /yazi dir" },
+	{ on = [ "g", "." ], run = "cd ~/.dotfiles", desc = "Goto .dotfiles dir" },
+	{ on = [ "g", "b" ], run = "cd ~/.Trash", desc = "Goto Trashbin"},
+	{ on = [ "m", "f" ], run = "plugin duck-radar", desc = "🦆 Duck Radar - Recent Files"},
+	{ on = [ "c", "2", "m" ], run = 'shell -- cp -r %s $HOME/Music/',desc = "一鍵複製到音樂資料夾" },
+	{ on = [ "m", "2", "m" ], run = 'shell -- mv %s $HOME/Music/', desc = "一鍵移動到音樂資料夾" },
+	{ on = [ "m", "2", "d" ], run = 'shell -- mv %s $HOME/Documents/PDF', desc = "一鍵移動到文件夾" },
+	#{ on = [ "g", "r" ], run = "plugin cd-git-root", desc = "Goto git repo root" },
+    
+ 	{ on = [ "c", "m" ], run = "plugin chmod", desc = "Chmod on selected files"},
+ 	{ on = [ "c", "t" ], run = "plugin copyto 'copy'", desc = "FZF 挑選目錄並【複製】檔案"},
+    { on = [ "m", "t" ], run = 'plugin copyto "move"', desc = "FZF 挑選目錄並【移動】檔案"},
+    
+ 	{ on = [ "z", "c" ], run = "shell --comfirm --block 'cz' %s", desc = "zip on selected files"},
+
+ 	{ on = [ "M" ], run = "plugin mount"},
+ 	{ on = [ "l" ], run = "plugin smart-enter", desc = "Enter the child directory, or open the file"},
+	
+	# mpv 音樂播放控制
+	#{ on = [ "p", "p" ], run = 'shell --confirm --block "printf \"cycle pause\\n\" | nc -U /tmp/mpv-socket"', desc = "暫停/恢復播放音樂" },
+	#{ on = [ "p", "i" ], run = "plugin mpv-status", desc = "顯示目前播放歌名" },
+	#{ on = [ "p", "i" ], run = 'shell --block "printf \"cycle pause\\n\" | nc -U /tmp/mpv-socket"', desc = "暫停/恢復播放音樂" },
+	#{ on = [ "p", "-" ], run = 'shell --confirm --block "printf \"add volume -15\\n\" | nc -U /tmp/mpv-socket"', desc = "減少播放音樂音量 (-15%)" },
+	#{ on = [ "p", ";" ], run = 'shell --confirm --block "printf \"add volume 10\\n\" | nc -U /tmp/mpv-socket"', desc = "增加播放音樂音量 (+10%)" },
+	#{ on = [ "p", "m" ], run = 'shell --confirm --block "printf \"cycle mute\\n\" | nc -U /tmp/mpv-socket"', desc = "切換音樂靜音狀態" },
+    #{ on = [ "p", "." ], run = 'shell --confirm --block "printf \"playlist-next\\n\" | nc -U /tmp/mpv-socket"', desc = "切換下一曲" },
+    #{ on = [ "p", "," ], run = 'shell --confirm --block "printf \"playlist-prev\\n\" | nc -U /tmp/mpv-socket"', desc = "切換上一曲" },
+	#{ on = [ "p", "q" ], run = 'shell --comfirm --block "killall mpv"', desc = "停止所有mpv音樂播放" },	
+	#generate audio player list m3u
+	{ on = [ "p", "l" ], run = "plugin playlist", desc = "Generate M3U playlist from selected audio files"},
+	
+	{ on = [ "p", "s" ], run = 'plugin mpv-play play',     desc = "播放選中音樂/清單" },
+    { on = [ "p", "a" ], run = 'plugin mpv-play add',      desc = "追加選中音樂到清單末尾" },
+    
+    # 控制類指令不需要傳遞檔案路徑，直接傳操作名即可
+    { on = [ "p", "p" ], run = 'plugin mpv-play pause',       desc = "暫停/恢復播放音樂" },
+    { on = [ "p", "i" ], run = 'plugin mpv-play status',      desc = "顯示目前播放歌名" },
+    { on = [ "p", "-" ], run = 'plugin mpv-play volumedown',  desc = "減少播放音樂音量 (-10%)" },
+    { on = [ "p", ";" ], run = 'plugin mpv-play volumeup',    desc = "增加播放音樂音量 (+10%)" },
+    { on = [ "p", "m" ], run = 'plugin mpv-play mute',        desc = "切換音樂靜音狀態" },
+    { on = [ "p", "." ], run = 'plugin mpv-play playnext',    desc = "切換下一曲" },
+    { on = [ "p", "," ], run = 'plugin mpv-play playprev',    desc = "切換上一曲" },
+    { on = [ "p", "q" ], run = 'plugin mpv-play stop',        desc = "停止所有mpv音樂播放" },
+
+	#Zellij
+	{ on = [ "g", "z" ], run = "shell --confirm --block 'kill -9 $(pgrep zellij)'", desc = "清理Zellij" },
+	
+	#maxview
+	{ on = [ "i" ], run = "plugin --sync maxview 'preview'" },
+	{ on = [ "j" ], run = "plugin --sync maxview 'j'" },
+	{ on = [ "k" ], run = "plugin --sync maxview 'k'" },
+
+	{ on = [ "z", "i" ], run = "plugin zoom 1",   desc = "放大預覽畫面 (Zoom In)" },
+	{ on = [ "z", "o" ], run = "plugin zoom -1",  desc = "縮小預覽畫面 (Zoom Out)" },
+	{ on = [ "z", "f" ], run = "plugin zoom 'fit'",  desc = "使預覽畫面填滿視窗 (Fit Window)" },
+	
+	#view
+	{ on = [ "v", "y" ], run = "shell --block 'ya pkg list':show", desc = "View yazi package"},
+	
+	#github
+	{ on = [ "g", "u" ], run = "shell --block 'sh $HOME/.config/yazi/scripts/gh-lazy.sh $PWD'",desc = "Lazy GitHub: 上傳新專案或更新舊 Clone"},
+
+]
