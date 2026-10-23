@@ -16,7 +16,7 @@ Ensure you have `fzf` and `fd` installed on your system.
 Add the plugin via Yazi's package manager:
 
 ```bash
-ya pkg add mega-Meta/copyto.yazi
+ya pkg add mega-Meta/yazi-plusins/copyto.yazi
 ```
 
 ## ⚙️ Configuration
