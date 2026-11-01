@@ -13,8 +13,9 @@ brew install yazi ffmpeg-full sevenzip jq poppler fd ripgrep fzf zoxide resvg im
 brew link ffmpeg-full imagemagick-full -f --overwrite
 ```
 If you prefer to use the most recent code, use the --HEAD flag when installing Yazi.
+```bash
 brew install yazi --HEAD
-
+```
 
 ### MacPorts
 for old Mac (intel CPU) 
