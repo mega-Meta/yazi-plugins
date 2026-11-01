@@ -23,7 +23,7 @@ for old Mac (intel CPU)
 sudo port install yazi ffmpeg 7zip jq poppler fd ripgrep fzf zoxide ImageMagick
 ```
 
-### Debian and Ubuntu
+## Debian and Ubuntu
 We provide Debian and Ubuntu users with an official APT repository that offers the latest stable and nightly amd64 and arm64 binary builds.
 ** StableNightly **
 ```bash
