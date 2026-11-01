@@ -36,6 +36,7 @@ desc = "FZF 挑選目錄並【移動】檔案or目錄"
 ```
 ## patch history
 >**2026.10.31 add path history records**
+>
 >**2026.10.31 add /Volumes to search list**
 
 ## 📄 License
