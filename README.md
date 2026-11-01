@@ -1,7 +1,7 @@
 # plugins for Yazi
 yazi-plugins
 
-## Yazi installation info.
+## Yazi installation summary
 >https://yazi-rs.github.io/docs/installation/
 >
 ## macOS
