@@ -1,5 +1,5 @@
 --- @since 26.8.15
-
+--- to get selected or hovered files or directories 
 local selected_or_hovered = ya.sync(function()
 	local tab, urls, paths = cx.active, {}, {}
 	for i, f in pairs(tab.selected) do
@@ -12,20 +12,19 @@ local selected_or_hovered = ya.sync(function()
 	return urls, paths
 end)
 
--- 透過 ya.sync 安全取得當前工作目錄 (cwd)
+-- get current working directory (CWD) by ya.sync
 local get_current_cwd = ya.sync(function()
 	return tostring(cx.active.current.cwd)
 end)
 
--- 取得歷史紀錄檔案路徑
+-- get path of history records
 local function get_history_filepath()
 	local home = os.getenv("HOME") or os.getenv("USERPROFILE")
 	if not home then return nil end
-	-- 統一存在 yazi 配置目錄下的插件資料夾（或自訂位置）
 	return home .. "/.config/yazi/copyto_history"
 end
 
--- 讀取歷史紀錄
+-- get history records from path(get_history_filepath())
 local function load_history()
 	local history = {}
 	local path = get_history_filepath()
@@ -43,7 +42,7 @@ local function load_history()
 	return history
 end
 
--- 儲存/更新歷史紀錄（最多 5 筆，最新使用的排最前）
+-- save and freash history records by stack mode, maximum limit can be modify by you
 local function save_history(new_dir)
 	local path = get_history_filepath()
 	if not path or not new_dir or new_dir == "" then return end
@@ -55,7 +54,7 @@ local function save_history(new_dir)
 	
 	-- 移除重複的舊紀錄
 	local clean_history = {}
-	table.insert(clean_history, new_dir_display) -- 新紀錄放第一
+	table.insert(clean_history, new_dir_display) -- update newest to first record
 	for _, v in ipairs(history) do
 		if v ~= new_dir_display and #clean_history < 50 then
 			table.insert(clean_history, v)
@@ -72,22 +71,21 @@ local function save_history(new_dir)
 	end
 end
 
-
--- 支援指定預設路徑置頂的 FZF 搜尋工具
+-- search Home and /Volumes by fd then using FZF tool
 local function pick_directory_via_fzf(default_type)
 	local home = os.getenv("HOME") or os.getenv("USERPROFILE")
 	if not home then
 		return nil, "無法取得家目錄路徑"
 	end
 
-	-- 透過同步函式安全取得 cwd
+	-- to get cwd
 	local cwd = get_current_cwd()
 
-	-- 1. 載入最近 5 次的歷史紀錄
+	-- to get history records
 	local history = load_history()
 	local prefix_items = {}
 
-	-- 2. 根據 default_type（cwd 或 home）將其加入置頂佇列
+	-- 1. prepares table for store queues and add home or cwd according bydefault_type
 	if default_type == "home" then
 		local home_tilde = home:gsub("^" .. home, "~")
 		table.insert(prefix_items, home_tilde)
@@ -96,28 +94,29 @@ local function pick_directory_via_fzf(default_type)
 		table.insert(prefix_items, cwd_display)
 	end
 
-	-- 3. 將歷史紀錄追加到置頂佇列中
+	-- 2. adding history records to queue
 	for _, h in ipairs(history) do
 		table.insert(prefix_items, h)
 	end
 
-	-- 4. 組裝前置的 printf 指令
+	-- 3. building the prefix  printf command by queue
 	local prefix_cmd = ""
 	if #prefix_items > 0 then
 		local formatted = {}
 		for _, item in ipairs(prefix_items) do
-    	table.insert(formatted, string.format("printf '%%s\\n' '%s';", item))
+			table.insert(formatted, string.format("printf '%%s\\n' '%s';", item))
 		end
 		prefix_cmd = table.concat(formatted, " ")
 	end
 
+  -- 4. compose fully search script 
 	local tmp_file = os.tmpname()
-	-- 使用 awk '!seen[$0]++' 確保縱使歷史紀錄與 cwd 重複，也只會顯示最前面那一筆
 	local cmd_str = string.format(
-		"(%s fd --type d --max-depth 4 . '%s' | sed 's|^%s|~|') | awk '!seen[$0]++' | fzf --prompt '選擇目標目錄 > ' --height 40%% > '%s'",
+		"(%s fd --type d --max-depth 4 . '%s' '/Volumes' | sed 's|^%s|~|') | awk '!seen[$0]++' | fzf --prompt '選擇目標目錄 > ' --height 40%% > '%s'",
 		prefix_cmd, home, home, tmp_file
 	)
 
+  -- 5. execute the search command and get path_choice (target path for copy or move)
 	local permit = ui.hide()
 	local status = Command("sh")
 		:arg("-c"):arg(cmd_str)
@@ -127,20 +126,20 @@ local function pick_directory_via_fzf(default_type)
 		:status()
 	permit:drop()
 
-	local choice = nil
+	local path_choice = nil
 	if status and status.success then
 		local f = io.open(tmp_file, "r")
-		if f then choice = f:read("*l") f:close() end
+		if f then path_choice = f:read("*l") f:close() end
 	end
 	os.remove(tmp_file)
 
-	if choice and choice ~= "" then
-		return choice:gsub("^~", home), nil
+	if path_choice and path_choice ~= "" then
+		return path_choice:gsub("^~", home), nil
 	end
 	return nil, "取消選擇"
 end
 
--- 穩健的檔案與資料夾存在性判定
+-- check files or directories existing in target path or not 
 local function path_exists(path)
 	local f = io.open(path, "r")
 	if f then
@@ -157,7 +156,7 @@ local function path_exists(path)
 	return true
 end
 
--- 自動改名邏輯
+-- auto rename by file existing rule
 local function get_unused_name(dest_dir, filename)
 	local name, ext = filename:match("([^.]+)(.*)")
 	if not name then name, ext = filename, "" end
@@ -175,7 +174,7 @@ local function get_unused_name(dest_dir, filename)
 	return new_filename
 end
 
--- 修正點：利用 fzf 彈出同名衝突詢問視窗，繞過 Yazi UI bug，100% 穩定彈出
+-- popup inquiry window by fzf buildin fuction to get ors_choice (overwrite/rename/skip)decision when file existing
 local function ask_conflict_via_fzf(filename)
 	local tmp_file = os.tmpname()
 	local cmd_str = string.format(
@@ -192,19 +191,19 @@ local function ask_conflict_via_fzf(filename)
 		:status()
 	permit:drop()
 
-	local choice = nil
+	local ors_choice = nil
 	if status and status.success then
 		local f = io.open(tmp_file, "r")
-		if f then choice = f:read("*l") f:close() end
+		if f then ors_choice = f:read("*l") f:close() end
 	end
 	os.remove(tmp_file)
 
 	if choice then
-		if string.match(choice, "覆寫") then return 1 end
-		if string.match(choice, "改名") then return 2 end
-		if string.match(choice, "忽略") then return 3 end
+		if string.match(ors_choice, "覆寫") then return 1 end
+		if string.match(ors_choice, "改名") then return 2 end
+		if string.match(ors_choice, "忽略") then return 3 end
 	end
-	return nil -- 取消
+	return nil
 end
 
 local function fail(op, s, ...)
@@ -232,8 +231,7 @@ local function report(urls)
 	end
 end
 
--- ...（此處省略 path_exists, get_unused_name, ask_conflict_via_fzf 等未變更函數）...
-
+-- main program 
 return {
 	entry = function(self, job)
 		ya.emit("escape", { visual = true })
@@ -243,7 +241,7 @@ return {
 		   op_type = tostring(job.args[1])
 		end
 
-        local cmd = (op_type == "move") and "mv" or "cp"
+		local cmd = (op_type == "move") and "mv" or "cp"
 		local op_name = (op_type == "move") and "移動" or "複製"
 
 		local urls, src_files = selected_or_hovered()
@@ -258,7 +256,7 @@ return {
 			return
 		end
 
-		-- 逐一處理檔案/目錄，判斷同名衝突
+		-- 1by1 check file existing 逐一處理檔案/目錄，判斷同名衝突
 		for i, src in ipairs(src_files) do
 			local clean_src = src:gsub("/+$", "")
 			local filename = clean_src:match("^.*/([^/]+)$") or clean_src
@@ -291,7 +289,7 @@ return {
 			::continue::
 		end
 
-		-- 【新增】當操作成功後，將本次使用的 dest_dir 記錄到歷史檔案中
+		-- write current dest_dir path to histoiry records file if success
 		pcall(save_history, dest_dir)
 
 		pcall(report, urls)
@@ -300,4 +298,3 @@ return {
 		ya.notify { title = op_name .. "成功", content = "檔案已" .. op_name .. "至 " .. display_path, level = "info", timeout = 3 }
 	end,
 }
-
