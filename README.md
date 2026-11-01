@@ -17,7 +17,8 @@ brew install yazi --HEAD
 
 
 ### MacPorts
-```bash
+for old Mac (intel CPU) 
+```bash 
 sudo port install yazi ffmpeg 7zip jq poppler fd ripgrep fzf zoxide ImageMagick
 ```
 
@@ -29,3 +30,12 @@ curl -fsSL https://yazi-rs.github.io/builds/yazi-keyring.gpg | sudo tee /usr/sha
 echo 'deb [signed-by=/usr/share/keyrings/yazi-keyring.gpg] https://yazi-rs.github.io/builds/ stable main' | sudo tee /etc/apt/sources.list.d/yazi.list >/dev/null
 sudo apt update && sudo apt install yazi
 ```
+## Other utilities apps
+### Exiftool
+### Eza
+### Attain
+### mpv
+### git
+
+
+## Plugins
