@@ -1,4 +1,4 @@
-# plugins for Yazi
+# Plugins for Yazi
 yazi-plugins
 
 ## Yazi installation summary
