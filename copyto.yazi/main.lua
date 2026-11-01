@@ -17,6 +17,62 @@ local get_current_cwd = ya.sync(function()
 	return tostring(cx.active.current.cwd)
 end)
 
+-- 取得歷史紀錄檔案路徑
+local function get_history_filepath()
+	local home = os.getenv("HOME") or os.getenv("USERPROFILE")
+	if not home then return nil end
+	-- 統一存在 yazi 配置目錄下的插件資料夾（或自訂位置）
+	return home .. "/.config/yazi/copyto_history"
+end
+
+-- 讀取歷史紀錄
+local function load_history()
+	local history = {}
+	local path = get_history_filepath()
+	if not path then return history end
+	
+	local f = io.open(path, "r")
+	if f then
+		for line in f:lines() do
+			if line ~= "" then
+				table.insert(history, line)
+			end
+		end
+		f:close()
+	end
+	return history
+end
+
+-- 儲存/更新歷史紀錄（最多 5 筆，最新使用的排最前）
+local function save_history(new_dir)
+	local path = get_history_filepath()
+	if not path or not new_dir or new_dir == "" then return end
+
+	local home = os.getenv("HOME") or os.getenv("USERPROFILE")
+	local new_dir_display = new_dir:gsub("^" .. home, "~")
+
+	local history = load_history()
+	
+	-- 移除重複的舊紀錄
+	local clean_history = {}
+	table.insert(clean_history, new_dir_display) -- 新紀錄放第一
+	for _, v in ipairs(history) do
+		if v ~= new_dir_display and #clean_history < 50 then
+			table.insert(clean_history, v)
+		end
+	end
+      
+	-- 寫回檔案
+	local f = io.open(path, "w")
+	if f then
+		for _, v in ipairs(clean_history) do
+			f:write(v .. "\n")
+		end
+		f:close()
+	end
+end
+
+
 -- 支援指定預設路徑置頂的 FZF 搜尋工具
 local function pick_directory_via_fzf(default_type)
 	local home = os.getenv("HOME") or os.getenv("USERPROFILE")
@@ -27,17 +83,36 @@ local function pick_directory_via_fzf(default_type)
 	-- 透過同步函式安全取得 cwd
 	local cwd = get_current_cwd()
 
-	-- 根據傳入的參數決定要在 fzf 最上方優先顯示哪個項目
-	local prefix_cmd = ""
+	-- 1. 載入最近 5 次的歷史紀錄
+	local history = load_history()
+	local prefix_items = {}
+
+	-- 2. 根據 default_type（cwd 或 home）將其加入置頂佇列
 	if default_type == "home" then
 		local home_tilde = home:gsub("^" .. home, "~")
-		prefix_cmd = string.format("printf '%s\\n';", home_tilde)
+		table.insert(prefix_items, home_tilde)
 	elseif default_type == "cwd" then
 		local cwd_display = cwd:gsub("^" .. home, "~")
-		prefix_cmd = string.format("printf '%s\\n';", cwd_display)
+		table.insert(prefix_items, cwd_display)
+	end
+
+	-- 3. 將歷史紀錄追加到置頂佇列中
+	for _, h in ipairs(history) do
+		table.insert(prefix_items, h)
+	end
+
+	-- 4. 組裝前置的 printf 指令
+	local prefix_cmd = ""
+	if #prefix_items > 0 then
+		local formatted = {}
+		for _, item in ipairs(prefix_items) do
+    	table.insert(formatted, string.format("printf '%%s\\n' '%s';", item))
+		end
+		prefix_cmd = table.concat(formatted, " ")
 	end
 
 	local tmp_file = os.tmpname()
+	-- 使用 awk '!seen[$0]++' 確保縱使歷史紀錄與 cwd 重複，也只會顯示最前面那一筆
 	local cmd_str = string.format(
 		"(%s fd --type d --max-depth 4 . '%s' | sed 's|^%s|~|') | awk '!seen[$0]++' | fzf --prompt '選擇目標目錄 > ' --height 40%% > '%s'",
 		prefix_cmd, home, home, tmp_file
@@ -157,6 +232,8 @@ local function report(urls)
 	end
 end
 
+-- ...（此處省略 path_exists, get_unused_name, ask_conflict_via_fzf 等未變更函數）...
+
 return {
 	entry = function(self, job)
 		ya.emit("escape", { visual = true })
@@ -174,7 +251,6 @@ return {
 			return ya.notify { title = op_name .. " 檔案", content = "未選取任何檔案", level = "warn", timeout = 5 }
 		end
 
-		-- 這裡你可以改成 "cwd" 讓當前工作目錄置頂，或者維持 "home"
 		local dest_dir, err = pick_directory_via_fzf("cwd")
 		
 		if not dest_dir then
@@ -215,9 +291,13 @@ return {
 			::continue::
 		end
 
+		-- 【新增】當操作成功後，將本次使用的 dest_dir 記錄到歷史檔案中
+		pcall(save_history, dest_dir)
+
 		pcall(report, urls)
 		local home = os.getenv("HOME") or os.getenv("USERPROFILE")
 		local display_path = dest_dir:gsub("^" .. home, "~")
 		ya.notify { title = op_name .. "成功", content = "檔案已" .. op_name .. "至 " .. display_path, level = "info", timeout = 3 }
 	end,
 }
+
