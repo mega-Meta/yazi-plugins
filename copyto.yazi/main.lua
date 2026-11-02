@@ -71,21 +71,17 @@ local function save_history(new_dir)
 	end
 end
 
--- search Home and /Volumes by fd then using FZF tool
+-- 完美分流修復版：修正直接 Enter 時的行數擷取錯誤，路徑恆定在第二行
 local function pick_directory_via_fzf(default_type)
 	local home = os.getenv("HOME") or os.getenv("USERPROFILE")
 	if not home then
 		return nil, "無法取得家目錄路徑"
 	end
 
-	-- to get cwd
 	local cwd = get_current_cwd()
-
-	-- to get history records
 	local history = load_history()
 	local prefix_items = {}
 
-	-- 1. prepares table for store queues and add home or cwd according bydefault_type
 	if default_type == "home" then
 		local home_tilde = home:gsub("^" .. home, "~")
 		table.insert(prefix_items, home_tilde)
@@ -94,12 +90,10 @@ local function pick_directory_via_fzf(default_type)
 		table.insert(prefix_items, cwd_display)
 	end
 
-	-- 2. adding history records to queue
 	for _, h in ipairs(history) do
 		table.insert(prefix_items, h)
 	end
 
-	-- 3. building the prefix  printf command by queue
 	local prefix_cmd = ""
 	if #prefix_items > 0 then
 		local formatted = {}
@@ -109,14 +103,42 @@ local function pick_directory_via_fzf(default_type)
 		prefix_cmd = table.concat(formatted, " ")
 	end
 
-  -- 4. compose fully search script 
-	local tmp_file = os.tmpname()
-	local cmd_str = string.format(
-		"(%s fd --type d --max-depth 4 . '%s' '/Volumes' | sed 's|^%s|~|') | awk '!seen[$0]++' | fzf --prompt '選擇目標目錄 > ' --height 40%% > '%s'",
-		prefix_cmd, home, home, tmp_file
-	)
+	local tmp_file = os.tmpname()      -- 專門存放基礎大目錄
+	local tmp_subfile = os.tmpname()   -- 專門存放子目錄名稱
+	local default_sub = os.date("%m%d")
 
-  -- 5. execute the search command and get path_choice (target path for copy or move)
+	-- 修正版：不管按什麼鍵，FZF --expect 機制傳回的目標路徑永遠在第 2 行 (2p)
+	local cmd_str = string.format([[
+		tmp_choice=$(mktemp)
+		
+		# 1. 執行 FZF 選擇基礎目錄
+		{ %s fd --type d --max-depth 4 . '%s' '/Volumes' | sed 's|^%s|~|'; } | awk '!seen[$0]++' | fzf --prompt '選擇目標目錄 (Enter: 直接放入 | Ctrl-N: 新增子目錄) > ' --height 40%% --expect=ctrl-n > "$tmp_choice"
+		
+		exit_code=$?
+		if [ $exit_code -eq 0 ]; then
+			key_pressed=$(sed -n '1p' "$tmp_choice")
+			path_selected=$(sed -n '2p' "$tmp_choice")
+
+			# 【關鍵核心修正】：如果路徑不為空，老老實實把第 2 行的路徑寫入暫存檔，不要再去抓第 1 行的空行！
+			if [ -n "$path_selected" ]; then
+				echo "$path_selected" > "%s"
+				
+				# 2. 如果是按 ctrl-n，才跳出輸入視窗
+				if [ "$key_pressed" = "ctrl-n" ]; then
+					clear
+					printf "\033[1;32m目標基礎目錄：\033[0m %%s\n" "$path_selected"
+					printf "\033[1;33m請輸入要新增的子目錄名稱 (預設 %s): \033[0m" "%s"
+					read input_name
+					if [ -z "$input_name" ]; then
+						input_name="%s"
+					fi
+					echo "$input_name" > "%s"
+				fi
+			fi
+		fi
+		rm -f "$tmp_choice"
+	]], prefix_cmd, home, home, tmp_file, default_sub, default_sub, default_sub, tmp_subfile)
+
 	local permit = ui.hide()
 	local status = Command("sh")
 		:arg("-c"):arg(cmd_str)
@@ -126,15 +148,28 @@ local function pick_directory_via_fzf(default_type)
 		:status()
 	permit:drop()
 
-	local path_choice = nil
+	-- 由 Lua 安全解析這兩個獨立通道
+	local base_path, sub_name = nil, nil
 	if status and status.success then
-		local f = io.open(tmp_file, "r")
-		if f then path_choice = f:read("*l") f:close() end
+		local f1 = io.open(tmp_file, "r")
+		if f1 then base_path = f1:read("*l") f1:close() end
+		
+		local f2 = io.open(tmp_subfile, "r")
+		if f2 then sub_name = f2:read("*l") f2:close() end
 	end
+	
 	os.remove(tmp_file)
+	os.remove(tmp_subfile)
 
-	if path_choice and path_choice ~= "" then
-		return path_choice:gsub("^~", home), nil
+	-- 在安全可靠的 Lua 內還原與拼接真實絕對路徑
+	if base_path and base_path ~= "" then
+		local full_base = base_path:gsub("^~", home)
+		
+		if sub_name and sub_name ~= "" then
+			return full_base:gsub("/+$", "") .. "/" .. sub_name, nil
+		else
+			return full_base, nil
+		end
 	end
 	return nil, "取消選擇"
 end
@@ -198,7 +233,7 @@ local function ask_conflict_via_fzf(filename)
 	end
 	os.remove(tmp_file)
 
-	if choice then
+	if ors_choice then
 		if string.match(ors_choice, "覆寫") then return 1 end
 		if string.match(ors_choice, "改名") then return 2 end
 		if string.match(ors_choice, "忽略") then return 3 end
@@ -215,29 +250,14 @@ local function fail(op, s, ...)
 	}
 end
 
-local function report(urls)
-	local ops = {}
-	for _, url in ipairs(urls) do
-		local file = fs.file(url)
-		if file then
-			ops[url.parent] = ops[url.parent] or {}
-			ops[url.parent][url.key] = file
-		end
-	end
-	for parent, files in pairs(ops) do
-		ya.emit("update_files", {
-			op = fs.op("upsert", { url = parent, files = files }),
-		})
-	end
-end
-
 -- main program 
 return {
 	entry = function(self, job)
 		ya.emit("escape", { visual = true })
 
+		-- 修正 Yazi 傳入引數解析
 		local op_type = "copy"
-		if job and job.args then
+		if job and job.args and job.args[1] then
 		   op_type = tostring(job.args[1])
 		end
 
@@ -256,7 +276,15 @@ return {
 			return
 		end
 
-		-- 1by1 check file existing 逐一處理檔案/目錄，判斷同名衝突
+		-- 自動建立完整絕對子目錄
+		if not path_exists(dest_dir) then
+			local mkdir_status = Command("mkdir"):arg("-p"):arg(dest_dir):status()
+			if not mkdir_status or not mkdir_status.success then
+				return fail(op_name, "無法建立子目錄: %s", dest_dir)
+			end
+		end
+
+		-- 逐一處理同名衝突與檔案傳輸
 		for i, src in ipairs(src_files) do
 			local clean_src = src:gsub("/+$", "")
 			local filename = clean_src:match("^.*/([^/]+)$") or clean_src
@@ -289,10 +317,28 @@ return {
 			::continue::
 		end
 
-		-- write current dest_dir path to histoiry records file if success
+		-- 儲存歷史紀錄
 		pcall(save_history, dest_dir)
 
-		pcall(report, urls)
+		-- 刷新 Yazi 視窗
+		local ops = {}
+		for _, url in ipairs(urls) do
+			local file = fs.file(url)
+			if file then
+				ops[url.parent] = ops[url.parent] or {}
+				ops[url.parent][url.key] = file
+			end
+		end
+		for parent, files in pairs(ops) do
+			ya.emit("update_files", {
+				op = fs.op("upsert", { url = parent, files = files }),
+			})
+		end
+
+		if op_type == "move" then
+			ya.emit("reload", {})
+		end
+
 		local home = os.getenv("HOME") or os.getenv("USERPROFILE")
 		local display_path = dest_dir:gsub("^" .. home, "~")
 		ya.notify { title = op_name .. "成功", content = "檔案已" .. op_name .. "至 " .. display_path, level = "info", timeout = 3 }
